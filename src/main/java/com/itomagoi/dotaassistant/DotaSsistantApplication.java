@@ -1,4 +1,4 @@
-package com.itomagoi.dota_ssistant;
+package com.itomagoi.dotaassistant;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
