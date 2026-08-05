@@ -1,6 +1,7 @@
 package com.itomagoi.dotaassistant.service;
 
 import com.itomagoi.dotaassistant.model.Hero;
+import com.itomagoi.dotaassistant.model.HeroMatchup;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -24,6 +25,15 @@ public class OpenDotaService {
         return restClient.get()
                 .uri("/heroes")
                 .retrieve()
-                .body(new ParameterizedTypeReference<List<Hero>>() {});
+                .body(new ParameterizedTypeReference<>() {
+                });
+    }
+
+    public List<HeroMatchup> getHeroMatchups(int heroId){
+        return restClient.get()
+                .uri("/heroes/{id}/matchups", heroId)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
     }
 }
