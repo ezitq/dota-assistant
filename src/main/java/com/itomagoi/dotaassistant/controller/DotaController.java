@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -28,5 +29,14 @@ public class DotaController {
     @GetMapping("/heroes/{id}/matchups")
     public List<HeroMatchup> getHeroes(@PathVariable int id) {
         return openDotaService.getHeroMatchups(id);
+    }
+
+    @GetMapping("/heroes/{id}/counterpick")
+    public List<String> getHeroCounterPicks(@PathVariable int id) {
+
+        List<String> counterPicks = new ArrayList<>(List.copyOf(openDotaService.getHeroCounterPicks(id))) ;
+        counterPicks.add("CounterPickOfHero");
+        counterPicks.add(openDotaService.getHeroNameById(id));
+        return counterPicks;
     }
 }
