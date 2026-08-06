@@ -34,7 +34,7 @@ public class DotaController {
     @GetMapping("/heroes/{id}/counterpick")
     public List<String> getHeroCounterPicks(@PathVariable int id) {
 
-        List<String> counterPicks = new ArrayList<>(List.copyOf(openDotaService.getHeroCounterPicks(id))) ;
+        List<String> counterPicks = new ArrayList<>(List.copyOf(openDotaService.getHeroCounterPickNames(id))) ;
         counterPicks.add("CounterPickOfHero");
         counterPicks.add(openDotaService.getHeroNameById(id));
         return counterPicks;

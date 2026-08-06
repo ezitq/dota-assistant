@@ -2,7 +2,9 @@ package com.itomagoi.dotaassistant.service;
 
 import com.itomagoi.dotaassistant.model.Hero;
 import com.itomagoi.dotaassistant.model.HeroMatchup;
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.core.ParameterizedTypeReference;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -40,7 +42,10 @@ public class OpenDotaService {
                 });
     }
 
-    public List<String> getHeroCounterPicks(int heroId){
+
+    @Tool(description = "Отримує список імен героїв, які є найкращими контрпіками проти вказаного heroId у Dota 2")
+    public List<String> getHeroCounterPickNames(int heroId) {
+        // ... твоя логіка з мапою та фільтрацією матчапів ...
 
         Map<Integer, String> heroesMap = getAllHeroes().stream()
                 .collect(Collectors.toMap(Hero::getId, Hero::getLocalizedName));
