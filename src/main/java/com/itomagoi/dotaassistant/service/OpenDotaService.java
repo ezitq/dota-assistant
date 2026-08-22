@@ -255,7 +255,8 @@ public class OpenDotaService {
                 // Беремо 100 матчів із запасом, щоб було з чого вибирати 20 нормальних
                 .uri("/players/{account_id}/matches?limit=100", accountId)
                 .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+                .body(new ParameterizedTypeReference<>() {
+                });
     }
 
     private List<PlayerHeroStat> getPlayerAllHeroes(int accountId) {
@@ -289,6 +290,8 @@ public class OpenDotaService {
 
         return medalName + " " + star;
     }
+
+    @Tool(description = "Отримує зведену статистику профілю гравця Dota 2 за його accountId (ID акаунта). Повертає його поточну форму, вінрейт, улюблену лінію та список найкращих сигнатурних героїв.")
     public PlayerSummaryAggregator getFullPlayerSummary(int accountId) {
 
         if (heroCache.isEmpty()) getAllHeroes();
@@ -459,5 +462,135 @@ public class OpenDotaService {
         playerSummaryAggregator.setBestRecentSignatureHeroes(bestRecentHeroes);
 
         return playerSummaryAggregator;
+    }
+
+    // 1. Безпечне отримання чисел (захист від null та ClassCastException)
+    private int getIntSafe(Map<String, Object> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number number) {
+            return number.intValue();
+        }
+        return 0; // Значення за замовчуванням, якщо поля немає або воно null
+    }
+
+    // 2. Безпечне отримання предмета (захист від порожніх слотів)
+    private MatchPlayerDetail.ItemDto getItemDtoSafely(Integer id) {
+        if (id == null || id == 0) {
+            return new MatchPlayerDetail.ItemDto(0, "Empty"); // Порожній слот
+        }
+        // ДОДАНО: Перевірка на порожній кеш
+        if (itemCache.isEmpty()) {
+            getAllItems();
+        }
+
+        Item item = itemCache.get(id);
+        return new MatchPlayerDetail.ItemDto(id, item != null ? item.getDname() : "Unknown Item");
+    }
+
+    // --- ОСНОВНИЙ МЕТОД ---
+    @Tool(description = "Отримує детальну статистику та розбір матчу Dota 2 за його унікальним ID (matchId). Повертає інформацію про переможця, тривалість та детальну статистику всіх 10 гравців (KDA, шкода, предмети).")
+    public PostMatchSummary getPostMatchSummary(long matchId) {
+
+        Map<String, Object> matchDetails = getFullMatchDetails(matchId);
+
+        // Безпечне отримання булевих значень
+        Boolean isRadiantWinObj = (Boolean) matchDetails.get("radiant_win");
+        boolean isRadiantWin = isRadiantWinObj != null && isRadiantWinObj;
+
+        // Використовуємо кастування до Number для Long/Integer безпеки
+        Number startTimeNum = (Number) matchDetails.get("start_time");
+        long startTime = startTimeNum != null ? startTimeNum.longValue() : 0L;
+
+        int duration = getIntSafe(matchDetails, "duration");
+        int radiantScore = getIntSafe(matchDetails, "radiant_score");
+        int direScore = getIntSafe(matchDetails, "dire_score");
+
+        Integer skill = (Integer) matchDetails.get("skill");
+        String skillBracket = "Unknown";
+        if (skill != null) {
+            skillBracket = switch (skill) {
+                case 1 -> "Normal Skill";
+                case 2 -> "High Skill";
+                case 3 -> "Very High Skill";
+                default -> "Unknown";
+            };
+        }
+
+        List<Map<String, Object>> players = (List<Map<String, Object>>) matchDetails.get("players");
+        List<MatchPlayerDetail> radiantPlayers = new LinkedList<>();
+        List<MatchPlayerDetail> direPlayers = new LinkedList<>();
+
+        if (players != null) {
+            for (Map<String, Object> playerMap : players) {
+                Boolean isRadiantObj = (Boolean) playerMap.get("isRadiant");
+                boolean isRadiant = isRadiantObj != null && isRadiantObj;
+
+                Number accIdNum = (Number) playerMap.get("account_id");
+                Long accountId = accIdNum != null ? accIdNum.longValue() : null;
+
+                String personaname = (String) playerMap.get("personaname");
+                if (personaname == null) {
+                    personaname = "Anonymous"; // Захист від закритих профілів
+                }
+
+                int heroId = getIntSafe(playerMap, "hero_id");
+                String heroName = getHeroNameById(heroId); // Твій існуючий безпечний метод
+                int level = getIntSafe(playerMap, "level");
+
+                int kills = getIntSafe(playerMap, "kills");
+                int deaths = getIntSafe(playerMap, "deaths");
+                int assists = getIntSafe(playerMap, "assists");
+                double kdaRatio = (double) (kills + assists) / (deaths == 0 ? 1 : deaths); // Захист від ділення на нуль
+
+                int netWorth = getIntSafe(playerMap, "net_worth");
+                int goldPerMin = getIntSafe(playerMap, "gold_per_min");
+                int xpPerMin = getIntSafe(playerMap, "xp_per_min");
+
+                int heroDamage = getIntSafe(playerMap, "hero_damage");
+                int towerDamage = getIntSafe(playerMap, "tower_damage");
+                int heroHealing = getIntSafe(playerMap, "hero_healing");
+                int obsPlaced = getIntSafe(playerMap, "obs_placed");
+
+                // Безпечно парсимо інвентар через допоміжний метод
+                List<MatchPlayerDetail.ItemDto> mainItems = new LinkedList<>();
+                for (int i = 0; i < 6; i++) {
+                    mainItems.add(getItemDtoSafely((Integer) playerMap.get("item_" + i)));
+                }
+
+                List<MatchPlayerDetail.ItemDto> backpackItems = new LinkedList<>();
+                for (int i = 0; i < 3; i++) {
+                    backpackItems.add(getItemDtoSafely((Integer) playerMap.get("backpack_" + i)));
+                }
+
+                MatchPlayerDetail.ItemDto neutralItem = getItemDtoSafely((Integer) playerMap.get("item_neutral"));
+
+                MatchPlayerDetail playerDetail = new MatchPlayerDetail(
+                        accountId, personaname, heroId, heroName, level,
+                        kills, deaths, assists, kdaRatio,
+                        netWorth, goldPerMin, xpPerMin,
+                        heroDamage, towerDamage, heroHealing, obsPlaced,
+                        mainItems, backpackItems, neutralItem
+                );
+
+                if (isRadiant) {
+                    radiantPlayers.add(playerDetail);
+                } else {
+                    direPlayers.add(playerDetail);
+                }
+            }
+        }
+
+        PostMatchSummary postMatchSummary = new PostMatchSummary();
+        postMatchSummary.setMatchId(matchId);
+        postMatchSummary.setDirePlayers(direPlayers);
+        postMatchSummary.setRadiantPlayers(radiantPlayers);
+        postMatchSummary.setDireScore(direScore);
+        postMatchSummary.setRadiantScore(radiantScore);
+        postMatchSummary.setDurationSeconds(duration);
+        postMatchSummary.setRadiantWin(isRadiantWin);
+        postMatchSummary.setStartTime(startTime);
+        postMatchSummary.setSkillBracket(skillBracket);
+
+        return postMatchSummary;
     }
 }

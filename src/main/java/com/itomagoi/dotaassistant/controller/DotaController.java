@@ -84,4 +84,10 @@ public class DotaController {
         return openDotaService.getFullPlayerSummary(accountId);
     }
 
+
+    @GetMapping("/matches/{id}/summary")
+    public PostMatchSummary getPostMatchSummary(@PathVariable long id){
+
+        return openDotaService.getPostMatchSummary(id);
+    }
 }

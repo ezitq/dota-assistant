@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dota 2 AI Assistant</title>
+    <style>
+        /* === БАЗОВІ НАЛАШТУВАННЯ ТА ТЕМНО-ФІОЛЕТОВИЙ ФОН === */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #0d0614, #210d3b, #12071f, #2a1147);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #e0e6ed;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* === ГОЛОВНИЙ КОНТЕЙНЕР === */
+        .chat-container {
+            width: 100%;
+            max-width: 850px;
+            height: 92vh;
+            background: rgba(15, 8, 25, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        /* === ШАПКА === */
+        header {
+            padding: 24px 30px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #b388ff;
+            border-radius: 50%;
+            margin-right: 12px;
+            box-shadow: 0 0 12px rgba(179, 136, 255, 0.6);
+        }
+
+        /* === ЧАТ === */
+        main {
+            flex: 1;
+            padding: 0 30px 20px 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            scroll-behavior: smooth;
+        }
+
+        main::-webkit-scrollbar { width: 4px; }
+        main::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 90%; /* Трохи розширив для дошки матчу */
+            animation: fadeIn 0.4s ease;
+        }
+
+        .wrapper-user { align-self: flex-end; align-items: flex-end; max-width: 80%; }
+        .wrapper-bot { align-self: flex-start; align-items: flex-start; width: 100%; }
+
+        .message {
+            padding: 16px 20px;
+            border-radius: 16px;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .msg-user {
+            background: linear-gradient(135deg, #5e35b1, #391a6e);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-bot {
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom-left-radius: 4px;
+            width: 100%;
+        }
+
+        /* === ПІДКАЗКИ (PROMPT CHIPS) === */
+        .prompt-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.05);
+            color: #b388ff;
+            padding: 10px 18px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .chip:hover {
+            background: rgba(179, 136, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* === ДОШКА МАТЧУ (RADIANT VS DIRE) === */
+        .match-board-container {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .match-summary-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.05rem;
+            color: #e0e6ed;
+        }
+
+        .match-board {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .team-col {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .team-header {
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            font-size: 1.1rem;
+        }
+
+        .radiant-header { color: #00ff88; }
+        .dire-header { color: #ff4c4c; }
+
+        .heroes-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        /* Кнопка Героя */
+        .hero-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px 4px;
+            width: calc(20% - 7px);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #b388ff;
+            word-wrap: break-word;
+        }
+
+        .hero-box:hover {
+            background: rgba(179, 136, 255, 0.2);
+            border-color: #b388ff;
+            transform: translateY(-2px);
+        }
+
+        /* Панель INFO */
+        .hero-info-panel {
+            display: none;
+            background: rgba(20, 10, 40, 0.95);
+            border: 1px solid #b388ff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 15px;
+            width: 100%;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        /* === ЗОНА ВВОДУ === */
+        footer {
+            padding: 20px 30px 30px 30px;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 6px;
+        }
+
+        input {
+            flex: 1;
+            padding: 14px 20px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        button.send-btn {
+            padding: 0 28px;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button.send-btn:hover { background: #5e35b1; }
+        button.send-btn:active { transform: scale(0.96); }
+
+        .typing-indicator {
+            align-self: flex-start;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            display: none;
+            padding-left: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <header>
+        <span class="status-dot"></span> AI Dota 2 Assistant
+    </header>
+
+    <main id="chat-box">
+        <!-- Привітальне повідомлення -->
+        <div class="message-wrapper wrapper-bot">
+            <div class="message msg-bot">
+                Привіт! Я твій AI-аналітик. Напиши, що тебе цікавить: можемо розібрати твій останній матч, подивитися статистику гравця або проаналізувати мету.
+            </div>
+            <div class="prompt-chips">
+                <div class="chip" onclick="sendChipMessage('Проаналізуй матч 8949736117')">Приклад матчу</div>
+                <div class="chip" onclick="sendChipMessage('Які герої зараз у меті на високих рангах?')">Поточна мета</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div id="typing" class="typing-indicator">Аналізую запит...</div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Напишіть своє повідомлення..." autocomplete="off">
+            <button id="send-btn" class="send-btn">Надіслати</button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const typingIndicator = document.getElementById('typing');
+
+    let currentAbortController = null;
+
+    function scrollToBottom() {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendChipMessage(text) {
+        userInput.value = text;
+        handleSend();
+    }
+
+    function addUserMessage(text) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message-wrapper wrapper-user';
+        wrapper.innerHTML = `<div class="message msg-user">${text}</div>`;
+        chatBox.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    function addBotMessage(contentHtml) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message-wrapper wrapper-bot';
+        wrapper.innerHTML = `<div class="message msg-bot">${contentHtml}</div>`;
+        chatBox.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    // Функція для відображення детальної інформації про героя
+    // Функція для відображення детальної інформації про героя
+    function openHeroInfo(element) {
+        const boardContainer = element.closest('.match-board-container');
+        const infoPanel = boardContainer.querySelector('.hero-info-panel');
+
+        const hero = element.getAttribute('data-hero') || 'Герой';
+        const nick = element.getAttribute('data-nick') || 'Приховано';
+        const accountId = element.getAttribute('data-account-id') || '0'; // Додали отримання ID
+        const kda = element.getAttribute('data-kda') || '0/0/0';
+        const nw = element.getAttribute('data-nw') || '0';
+        const gpm = element.getAttribute('data-gpm') || '0';
+        const xpm = element.getAttribute('data-xpm') || '0';
+        const dmg = element.getAttribute('data-dmg') || '0';
+        const items = element.getAttribute('data-items') || 'Немає предметів';
+
+        // Перевіряємо, чи є в гравця публічний ID
+        let clickableNickHtml = '';
+        if (accountId !== '0' && accountId !== 'null' && accountId !== '') {
+            // Якщо ID є, відправляємо його в запиті
+            clickableNickHtml = `<span style="font-size:0.9rem; color:#b388ff; cursor:pointer; text-decoration:underline; margin-left:8px;" onclick="sendChipMessage('Проаналізуй профіль ${accountId}')">(${nick})</span>`;
+        } else {
+            // Якщо профіль прихований, робимо текст сірим і неклікабельним
+            clickableNickHtml = `<span style="font-size:0.9rem; color:#8892b0; margin-left:8px;">(Прихований профіль)</span>`;
+        }
+
+        infoPanel.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
+                    <div style="font-size:1.1rem; color:#fff;">
+                        ${hero} ${clickableNickHtml}
+                    </div>
+                    <span style="cursor:pointer; color:#ff4c4c; font-size:1.2rem; font-weight:bold; padding:0 8px;" onclick="this.parentElement.parentElement.style.display='none'">×</span>
+                </div>
+                <div class="info-grid">
+                    <div>KDA: <b style="color:#00ff88;">${kda}</b></div>
+                    <div>Net Worth: <b style="color:#ffd54f;">${nw}</b></div>
+                    <div>GPM / XPM: <b>${gpm} / ${xpm}</b></div>
+                    <div>Шкода по героях: <b style="color:#ff8a80;">${dmg}</b></div>
+                </div>
+                <div style="margin-top:12px; font-size:0.85rem; color:#8892b0; background:rgba(255,255,255,0.02); padding:8px; border-radius:6px;">
+                    <b style="color:#e0e6ed;">Предмети:</b> ${items}
+                </div>
+            `;
+
+        infoPanel.style.display = 'block';
+        infoPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function handleSend() {
+        const text = userInput.value.trim();
+
+        if (currentAbortController) {
+            currentAbortController.abort();
+            return;
+        }
+
+        if (!text) return;
+
+        addUserMessage(text);
+        userInput.value = '';
+
+        typingIndicator.style.display = 'block';
+
+        sendBtn.innerText = 'Зупинити';
+        sendBtn.style.background = '#ff4c4c';
+
+        currentAbortController = new AbortController();
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text }),
+                signal: currentAbortController.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            addBotMessage(data.response);
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                addBotMessage("<i>Аналіз успішно зупинено. Чим ще можу допомогти?</i>");
+            } else {
+                console.error('Помилка:', error);
+                addBotMessage("Упс! Сервер не відповідає. Перевір, чи запущений твій Spring Boot додаток.");
+            }
+        } finally {
+            typingIndicator.style.display = 'none';
+            sendBtn.innerText = 'Надіслати';
+            sendBtn.style.background = 'rgba(255, 255, 255, 0.08)';
+            currentAbortController = null;
+        }
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSend();
+    });
+</script>
+</body>
+</html>
