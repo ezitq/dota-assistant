@@ -3,6 +3,7 @@ package com.itomagoi.dotaassistant.controller;
 import com.itomagoi.dotaassistant.model.*;
 import com.itomagoi.dotaassistant.service.OpenDotaService;
 import com.itomagoi.dotaassistant.service.ReportExportService;
+import com.itomagoi.dotaassistant.service.StratzService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -16,10 +17,12 @@ import java.util.Map;
 public class DotaController {
 
     private final OpenDotaService openDotaService;
+    private final StratzService stratzService;
     private final ReportExportService reportExportService;
 
-    public DotaController(OpenDotaService openDotaService, ReportExportService reportExportService) {
+    public DotaController(OpenDotaService openDotaService, StratzService stratzService, ReportExportService reportExportService) {
         this.openDotaService = openDotaService;
+        this.stratzService = stratzService;
         this.reportExportService = reportExportService;
     }
 
@@ -33,7 +36,9 @@ public class DotaController {
         return openDotaService.getHeroMatchups(id);
     }
 
-    @GetMapping("/heroes/{name}/counterpick")
+
+
+    @GetMapping("/heroes/{name}/counterpick/v1")
     public List<String> getHeroCounterPicks(@PathVariable String name) {
         Integer heroId = openDotaService.getHeroIdByName(name);
 
@@ -46,6 +51,28 @@ public class DotaController {
         counterPicks.add(openDotaService.getHeroNameById(heroId));
 
         return counterPicks;
+    }
+
+    @GetMapping("/heroes/{name}/counterpick/v2")
+    public String getHeroCounterPicksV2(@PathVariable String name) {
+        Integer heroId = openDotaService.getHeroIdByName(name);
+
+        if (heroId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Героя з іменем " + name + " не знайдено");
+        }
+
+        return stratzService.getCounterPicks(heroId);
+    }
+
+    @GetMapping("/heroes/{name}/matches")
+    public String getHeroConributions(@PathVariable String name) {
+        Integer heroId = openDotaService.getHeroIdByName(name);
+
+        if (heroId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Героя з іменем " + name + " не знайдено");
+        }
+
+        return stratzService.getHeroRoleDistribution(heroId);
     }
 
     @GetMapping("/heroes/{name}/player")
@@ -85,9 +112,16 @@ public class DotaController {
     }
 
 
+    @GetMapping("/heroes/meta")
+    public String getMetaHeroes(){
+        return stratzService.getStratzMetaHeroes();
+    }
+
     @GetMapping("/matches/{id}/summary")
     public PostMatchSummary getPostMatchSummary(@PathVariable long id){
 
         return openDotaService.getPostMatchSummary(id);
     }
+
+
 }

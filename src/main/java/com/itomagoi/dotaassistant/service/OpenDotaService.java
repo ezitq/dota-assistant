@@ -165,7 +165,7 @@ public class OpenDotaService {
                 .filter(matchup -> matchup.getGamesPlayed() > 10)
                 .filter(matchup -> {
                     double winRate = ((double) matchup.getWins() / matchup.getGamesPlayed()) * 100.0;
-                    return winRate < 45.0;
+                    return winRate < 50.0;
                 })
                 .sorted((m1, m2) -> {
                     double wr1 = (double) m1.getWins() / m1.getGamesPlayed();
@@ -593,4 +593,6 @@ public class OpenDotaService {
 
         return postMatchSummary;
     }
+
+
 }
