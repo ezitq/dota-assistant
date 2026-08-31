@@ -164,6 +164,70 @@ public class ChatController {
                                     <!-- Додай ще 2-3 героїв -->
                                 </ul>
                             </div>                        
+                            
+                                ПРАВИЛО ФОРМАТУВАННЯ КОНТР-ПІКІВ (COUNTER PICKS):
+                                    Коли користувач просить підібрати контр-пік проти конкретного героя (наприклад: "чим контрити Пудж", "контр-піки на Anti-Mage"),
+                                    ти ОБОВ'ЯЗКОВО повинен використовувати цей HTML-шаблон. Знайди героїв з найвищим показником переваги (advantage %)
+                                    проти вказаного героя для кожної ролі та виведи їх у вигляді сітки.
+                        
+                                    ШАБЛОН КОНТР-ПІКІВ:
+                                    <div class="counter-pick-container">
+                                        <div class="counter-hero-header">
+                                            <img class="counter-hero-photo" src="[URL_ФОТО_ГЕРОЯ_АБО_ЗАГЛУШКА]" alt="[ГЕРОЙ]">
+                                            <div>
+                                                <div class="counter-hero-label">Контр-піки проти</div>
+                                                <h2 class="counter-hero-name">[НАЗВА_ГЕРОЯ]</h2>
+                                            </div>
+                                        </div>
+                        
+                                        <!-- Керрі (POSITION_1) -->
+                                        <div class="role-block">
+                                            <h3 class="role-title role-title-carry">⚔️ Керрі (Safe Lane)</h3>
+                                            <div class="counter-heroes-grid">
+                                                <!-- Згенеруй 4 картки героїв -->
+                                                <div class="counter-hero-box" data-hero="[ГЕРОЙ]">
+                                                    <img class="counter-hero-mini-photo" src="[URL_ФОТО]" alt="[ГЕРОЙ]">
+                                                    <div class="counter-hero-mini-name">[ГЕРОЙ]</div>
+                                                    <div class="counter-hero-stats">wr: <b>[WR]%</b><br>adv: <b class="[adv-positive_або_adv-negative]">[ADV]%</b></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                        
+                                        <!-- Мідлейн (POSITION_2) -->
+                                        <div class="role-block">
+                                            <h3 class="role-title role-title-mid">🎯 Мідлейн (Mid)</h3>
+                                            <div class="counter-heroes-grid">
+                                                <!-- Згенеруй 4 картки героїв -->
+                                            </div>
+                                        </div>
+                        
+                                        <!-- Офлейн (POSITION_3) -->
+                                        <div class="role-block">
+                                            <h3 class="role-title role-title-offlane">🛡️ Офлейн (Hard Lane)</h3>
+                                            <div class="counter-heroes-grid">
+                                                <!-- Згенеруй 4 картки героїв -->
+                                            </div>
+                                        </div>
+                        
+                                        <!-- Саппорти (POSITION_4 та POSITION_5) -->
+                                        <div class="role-block">
+                                            <h3 class="role-title role-title-support">⚕️ Саппорти (Soft & Hard)</h3>
+                                            <div class="counter-heroes-grid">
+                                                <!-- Згенеруй 4-8 карток героїв -->
+                                            </div>
+                                        </div>
+                        
+                                        <div class="counter-pick-summary">
+                                            [Напиши короткий абзац на 2-3 речення: чому саме ці герої добре контрять [НАЗВА_ГЕРОЯ] — завдяки чому саме (стан, дальність атаки, контроль, здатність уникати комбо тощо).]
+                                        </div>
+                                    </div>
+                        
+                                    ПРАВИЛА ДЛЯ ЦЬОГО ШАБЛОНУ:
+                                    1. "wr" — загальний вінрейт героя в поточному патчі, "adv" — перевага у winrate саме в матчапі проти [НАЗВА_ГЕРОЯ].
+                                    2. Якщо adv > 0, використовуй клас "adv-positive" (зелений), якщо adv <= 0 — клас "adv-negative" (червоний). Показуй тільки героїв із позитивною або нейтральною перевагою, сортуй за спаданням adv.
+                                    3. Якщо ти не маєш точних даних по фото героя, залиш src порожнім або став "[ГЕРОЙ]" як alt — фронтенд підставить заглушку.
+                                    4. НІКОЛИ не змішуй цей шаблон з текстовим списком — лише HTML-сітка.
+                            
                             Відповідай українською мовою.
                         """)
                 .build();
