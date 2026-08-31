@@ -155,63 +155,6 @@ public class OpenDotaService {
                 .toList();
     }
 
-    // --- БІЗНЕС-ЛОГІКА ТА ТУЛИ ---
-
-    @Tool(description = "Отримує список імен героїв, які є найкращими контрпіками проти вказаного heroId у Dota 2")
-    public List<String> getHeroCounterPickNames(int heroId) {
-        if (heroCache.isEmpty()) getAllHeroes(); // Гарантуємо, що кеш заповнений
-
-        return getHeroMatchups(heroId).stream()
-                .filter(matchup -> matchup.getGamesPlayed() > 10)
-                .filter(matchup -> {
-                    double winRate = ((double) matchup.getWins() / matchup.getGamesPlayed()) * 100.0;
-                    return winRate < 50.0;
-                })
-                .sorted((m1, m2) -> {
-                    double wr1 = (double) m1.getWins() / m1.getGamesPlayed();
-                    double wr2 = (double) m2.getWins() / m2.getGamesPlayed();
-                    return Double.compare(wr1, wr2); // Сортування за вінрейтом
-                })
-                .limit(10)
-                .map(matchup -> getHeroNameById(matchup.getHeroId())) // Використовуємо кешований метод
-                .filter(name -> !name.equals("Unknown Hero"))
-                .toList();
-    }
-
-    @Tool(description = "Повертає список найсильніших (метових) героїв на високих рангах пабліку (Ancient, Divine, Immortal) з високим вінрейтом та популярністю")
-    public List<String> getMetaHeroes() {
-        try {
-            List<HeroStats> stats = getAllHeroStats();
-
-            if (stats == null) {
-                return List.of();
-            }
-
-            // Оголошуємо змінну metaList, щоб зберегти результат фільтрації
-            List<String> metaList = stats.stream()
-                    .filter(hero -> hero.getHighRankPick() > 200)
-                    .sorted((h1, h2) -> {
-                        double wr1 = (double) h1.getHighRankWin() / h1.getHighRankPick();
-                        double wr2 = (double) h2.getHighRankWin() / h2.getHighRankPick();
-                        return Double.compare(wr2, wr1);
-                    })
-                    .limit(10)
-                    .map(hero -> String.format("%s (Winrate: %.1f%%, Matches: %d)",
-                            hero.getLocalizedName(),
-                            ((double) hero.getHighRankWin() / hero.getHighRankPick()) * 100,
-                            hero.getHighRankPick()))
-                    .toList();
-
-            // Тепер Java знає, що таке metaList, і цей рядок працюватиме без помилок
-
-            return metaList;
-
-        } catch (Exception e) {
-            System.err.println("🔴 Помилка: " + e.getMessage());
-            return List.of("Помилка отримання даних.");
-        }
-    }
-
     public List<MatchRequest> getHighRankPublicMatches() {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder
