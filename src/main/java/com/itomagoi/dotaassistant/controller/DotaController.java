@@ -37,22 +37,6 @@ public class DotaController {
     }
 
 
-
-    @GetMapping("/heroes/{name}/counterpick/v1")
-    public List<String> getHeroCounterPicks(@PathVariable String name) {
-        Integer heroId = openDotaService.getHeroIdByName(name);
-
-        if (heroId == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Героя з іменем " + name + " не знайдено");
-        }
-
-        List<String> counterPicks = new ArrayList<>(openDotaService.getHeroCounterPickNames(heroId));
-        counterPicks.add("CounterPickOfHero");
-        counterPicks.add(openDotaService.getHeroNameById(heroId));
-
-        return counterPicks;
-    }
-
     @GetMapping("/heroes/{name}/counterpick/v2")
     public String getHeroCounterPicksV2(@PathVariable String name) {
         Integer heroId = openDotaService.getHeroIdByName(name);
@@ -61,7 +45,7 @@ public class DotaController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Героя з іменем " + name + " не знайдено");
         }
 
-        return stratzService.getCounterPicks(heroId);
+        return stratzService.getPositionalCounters(heroId);
     }
 
     @GetMapping("/heroes/{name}/matches")
