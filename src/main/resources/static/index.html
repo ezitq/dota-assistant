@@ -230,6 +230,118 @@
             gap: 12px;
         }
 
+        /* === КОНТР-ПІКИ === */
+        .counter-pick-container {
+            width: 100%;
+            background: rgba(15, 8, 25, 0.6);
+            border: 1px solid rgba(179, 136, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 10px;
+        }
+
+        .counter-hero-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .counter-hero-photo {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid #b388ff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .counter-hero-label {
+            color: #8892b0;
+            font-size: 0.85rem;
+        }
+
+        .counter-hero-name {
+            color: #fff;
+            font-size: 1.3rem;
+            margin: 2px 0 0 0;
+        }
+
+        .role-block { margin-bottom: 18px; }
+
+        .role-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .role-title-carry { color: #ffd54f; }
+        .role-title-mid { color: #ff8a80; }
+        .role-title-offlane { color: #b388ff; }
+        .role-title-support { color: #00ff88; }
+
+        .counter-heroes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .counter-hero-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px 6px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .counter-hero-box:hover {
+            background: rgba(179, 136, 255, 0.12);
+            border-color: #b388ff;
+            transform: translateY(-2px);
+        }
+
+        .counter-hero-mini-photo {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 6px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.08);
+            margin-bottom: 6px;
+        }
+
+        .counter-hero-mini-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #e0e6ed;
+            margin-bottom: 4px;
+        }
+
+        .counter-hero-stats {
+            font-size: 0.75rem;
+            color: #8892b0;
+            line-height: 1.4;
+        }
+
+        .adv-positive { color: #00ff88; }
+        .adv-negative { color: #ff4c4c; }
+
+        .counter-pick-summary {
+            color: #e0e6ed;
+            line-height: 1.5;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 600px) {
+            .counter-heroes-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
         .input-area {
             display: flex;
             gap: 12px;
