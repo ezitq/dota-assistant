@@ -42,7 +42,8 @@ public class StratzService {
                 .build();
     }
 
-    private record Counter(int heroId, double advantage, int matchCount) {}
+    private record Counter(int heroId, double advantage, int matchCount) {
+    }
 
     // -------------------------------------------------------------------------
     // TOOLS
@@ -192,7 +193,8 @@ public class StratzService {
                     int matchCount,
                     double laneWinRate,
                     double matchWinRate
-            ) {}
+            ) {
+            }
 
             List<LaneRow> rows = new ArrayList<>();
 
@@ -267,6 +269,92 @@ public class StratzService {
         }
     }
 
+    public String getHeroSpammer(int heroId) {
+        final int MIN_MATCHES = 10;
+        final double MIN_WINRATE = 50;
+        final int TAKE = 100; // скільки гравців брати з лідерборду
+
+        String graphqlQuery = """
+            query {
+              leaderboard {
+                hero(request: {
+                  heroIds: [%d]
+                  bracketIds: [DIVINE]
+                  take: %d
+                }) {
+                  steamAccountId
+                  wins
+                  losses
+                  position
+                }
+              }
+            }
+            """.formatted(heroId, TAKE);
+
+        try {
+            JsonNode root = postGraphql(graphqlQuery);
+
+            if (root.has("errors")) {
+                return "Помилка Stratz API: " + root.path("errors");
+            }
+
+            JsonNode stats = root.path("data")
+                    .path("leaderboard")
+                    .path("hero");
+
+            if (!stats.isArray() || stats.isEmpty()) {
+                return "Nothing found";
+            }
+
+            record Player(long steamId, double wr, String position) {}
+
+            List<Player> players = new ArrayList<>();
+
+            for (JsonNode node : stats) {
+                long accountId = node.path("steamAccountId").asLong();
+                int wins = node.path("wins").asInt();
+                int losses = node.path("losses").asInt();
+                int matches = wins + losses;
+
+                if (matches < MIN_MATCHES) continue;
+
+                double wr = matches > 0 ? (double) wins / matches * 100 : 0;
+                if (wr < MIN_WINRATE) continue;
+
+                String position = node.path("position").asText();
+                players.add(new Player(accountId, wr, position));
+            }
+
+            if (players.isEmpty()) {
+                return "Нікого не знайдено з WR ≥ " + MIN_WINRATE + "% і " + MIN_MATCHES + "+ матчами";
+            }
+
+            String heroName = resolveHeroName(heroId);
+            if (heroName == null) {
+                return "Невідомий герой з id: " + heroId;
+            }
+
+            StringBuilder result = new StringBuilder();
+            result.append("HERO NAME: ").append(heroName.toUpperCase()).append("\n");
+
+            for (int i = 0; i < players.size(); i++) {
+                Player p = players.get(i);
+                result.append(String.format(
+                        "%d. %d — WR %.1f%% (позиція: %s)%n",
+                        i + 1,
+                        p.steamId,
+                        p.wr,
+                        p.position
+                ));
+            }
+
+            return result.toString();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Не вдалося отримати дані для heroId=" + heroId, e);
+        }
+    }
+
     @Tool(description = """
             Отримує найактуальнішу мету героїв на Divine/Immortal з розбивкою по 5 позиціях.
             Для кожної позиції повертає топ героїв за winrate (мін. 50 ігор).
@@ -276,32 +364,32 @@ public class StratzService {
         String graphqlQuery = """
                 query {
                   pos1: heroStats {
-                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_1]) {
+                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_1], %s) {
                       heroId matchCount winCount
                     }
                   }
                   pos2: heroStats {
-                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_2]) {
+                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_2], %s) {
                       heroId matchCount winCount
                     }
                   }
                   pos3: heroStats {
-                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_3]) {
+                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_3], %s) {
                       heroId matchCount winCount
                     }
                   }
                   pos4: heroStats {
-                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_4]) {
+                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_4], %s) {
                       heroId matchCount winCount
                     }
                   }
                   pos5: heroStats {
-                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_5]) {
+                    stats(bracketBasicIds: [DIVINE_IMMORTAL], positionIds: [POSITION_5], %s) {
                       heroId matchCount winCount
                     }
                   }
                 }
-                """;
+                """.formatted(weekPart, weekPart, weekPart, weekPart, weekPart);
 
         try {
             JsonNode root = postGraphql(graphqlQuery);
@@ -309,7 +397,8 @@ public class StratzService {
                 return "Помилка Stratz API: " + root.path("errors");
             }
 
-            record MetaHero(int heroId, int matchCount, double winRate) {}
+            record MetaHero(int heroId, int matchCount, double winRate) {
+            }
 
             Map<String, String> aliases = Map.of(
                     "pos1", "POSITION_1",
@@ -329,9 +418,11 @@ public class StratzService {
                 if (stats.isArray()) {
                     for (JsonNode node : stats) {
                         int matchCount = node.path("matchCount").asInt();
-                        if (matchCount < 50) continue;
+                        if (matchCount < 400) continue;
                         int winCount = node.path("winCount").asInt();
                         double wr = (double) winCount / matchCount * 100.0;
+                        if (wr < 52.0) continue;
+
                         heroes.add(new MetaHero(node.path("heroId").asInt(), matchCount, wr));
                     }
                 }
@@ -403,7 +494,8 @@ public class StratzService {
                 return "Немає статистики ігор для героя " + targetHeroName + ".";
             }
 
-            record RoleStat(String position, int matchCount, double winRate) {}
+            record RoleStat(String position, int matchCount, double winRate) {
+            }
             List<RoleStat> roles = new ArrayList<>();
             int totalMatches = 0;
 
