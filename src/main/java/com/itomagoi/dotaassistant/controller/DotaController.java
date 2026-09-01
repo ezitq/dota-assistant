@@ -59,15 +59,26 @@ public class DotaController {
         return stratzService.getHeroRoleDistribution(heroId);
     }
 
+//    @GetMapping("/heroes/{name}/player")
+//    public List<ProPlayer> getPlayersByHeroName(@PathVariable String name) {
+//        Integer heroId = openDotaService.getHeroIdByName(name);
+//
+//        if (heroId == null) {
+//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Героя з іменем " + name + " не знайдено");
+//        }
+//
+//        return openDotaService.getPlayers(heroId);
+//    }
+
     @GetMapping("/heroes/{name}/player")
-    public List<ProPlayer> getPlayersByHeroName(@PathVariable String name) {
+    public String getPlayersByHeroName(@PathVariable String name) {
         Integer heroId = openDotaService.getHeroIdByName(name);
 
         if (heroId == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Героя з іменем " + name + " не знайдено");
         }
 
-        return openDotaService.getPlayers(heroId);
+        return stratzService.getHeroSpammer(heroId);
     }
 
     @GetMapping("/export-global-meta")
@@ -98,7 +109,7 @@ public class DotaController {
 
     @GetMapping("/heroes/meta")
     public String getMetaHeroes(){
-        return stratzService.getStratzMetaHeroes();
+        return stratzService.getStratzMetaHeroes(true);
     }
 
     @GetMapping("/matches/{id}/summary")

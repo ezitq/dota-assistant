@@ -284,7 +284,7 @@ public class ChatController {
         // 2. ПЕРЕВІРКА НА ЗАПИТ ПРО МЕТУ
         if (lowerMsg.contains("мет") || lowerMsg.contains("геро") || lowerMsg.contains("мід") || lowerMsg.contains("тір")) {
             try {
-                String stratzJson = stratzService.getStratzMetaHeroes();
+                String stratzJson = stratzService.getStratzMetaHeroes(true);
                 return "<i style='color:#ffaa00; font-size: 0.85rem;'>⚠️ ШІ відпочиває. Згенерував тір-лист напряму з бази Stratz:</i><br><br>"
                         + buildManualMetaHtml(stratzJson);
             } catch (Exception ex) {
